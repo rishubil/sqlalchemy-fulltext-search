@@ -27,15 +27,21 @@ class FullTextSearch(ClauseElement):
     Search FullText
     :param against: the search query
     :param table: the table needs to be query
+    :param mode: the mode of search query
+    :param columns: the columns of the table needs to be query. if columns is None, it will use all columns.
 
     FullText support with in query, i.e.
         >>> from sqlalchemy_fulltext import FullTextSearch
         >>> session.query(Foo).filter(FullTextSearch('Spam', Foo))
     """
-    def __init__(self, against, model, mode=FullTextMode.DEFAULT):
+    def __init__(self, against, model, mode=FullTextMode.DEFAULT, columns=None):
         self.model = model
         self.against = literal(against)
         self.mode = mode
+        if columns is None:
+            self.columns = model.__fulltext_columns__
+        else:
+            self.columns = columns
 
 
 def get_table_name(element):
@@ -48,7 +54,8 @@ def get_table_name(element):
 def __mysql_fulltext_search(element, compiler, **kw):
     assert issubclass(element.model, FullText), "{0} not FullTextable".format(element.model)
     return MYSQL_MATCH_AGAINST.format(
-        ", ".join([get_table_name(element) + column for column in element.model.__fulltext_columns__]),
+        ", ".join([get_table_name(element) + column for column in element.model.__fulltext_columns__
+                   if column in element.columns]),
         compiler.process(element.against),
         element.mode)
 

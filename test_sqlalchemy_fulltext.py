@@ -106,5 +106,12 @@ class TestSQLAlchemyFullText(unittest.TestCase):
         raw = self.session.execute('SELECT * FROM {0} WHERE MATCH (commentor, review) AGAINST ("spam" WITH QUERY EXPANSION)'.format(RecipeReviewModel.__tablename__))
         self.assertEqual(full.count(), raw.rowcount, 'Query Test Failed')
 
+
+    def test_fulltext_query_columns(self):
+        full = self.session.query(RecipeReviewModel).filter(FullTextSearch('spam', RecipeReviewModel, columns=('review')))
+        self.assertEqual(full.count(), 2,)
+        raw = self.session.execute('SELECT * FROM {0} WHERE MATCH (review) AGAINST ("spam")'.format(RecipeReviewModel.__tablename__))
+        self.assertEqual(full.count(), raw.rowcount, 'Query Test Failed')
+
 if __name__ == '__main__':
     unittest.main()
